@@ -1,0 +1,158 @@
+---
+title: "A06 - Crafting Reports"
+author: "Liam Connolly"
+date: "Fall 2025"
+output:
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+    lof: true
+---
+\listoffigures
+## Objectives:
+
+1.  More practice with R code chunk options
+2.  Gain proficiency with figures, tables (w/`Kable`) table of contents, etc.
+3.  Debugging knitting issues
+
+## Directions
+
+1.  Rename this file `<FirstLast>_A06_CraftingReports.Rmd` 
+(replacing `<FirstLast>` with your first and last name).
+2.  Change "Student Name" on line 3 (above) with your name.
+3.  Work through the tasks, **creating code and output** that fulfill each instruction.
+4.  Be sure your code is tidy; use line breaks to ensure your code fits in the knitted output.
+5.  Be sure to **answer the questions** in this assignment document.
+6.  When you have completed the assignment, **Knit** the text and code into a 
+single PDF file.
+7.  **Be sure that you also commit and push your final Rmd document to your GitHub account**.
+
+## Task 1 - Basic Markdown
+
+Using markdown, create a 2-column table beneath the `Table: EPA Air Quality` line below that summarizes the metadata of the EPA Air Quality data.
+
+- The first column should have the header `Item`, below which are three rows listing these metadata attribute item names: `Filename`, `Date`, and `Source`.
+
+- The second column should have the header `Value` and include the metadata values: `EPAair_O3_PM25_NC1819_Processed.csv`, `2018-2019`, and `EPA Air Quality System (AQS)`.
+
+- The first column should be aligned to the right and the second to the left.
+
+<p align="center">Table 1: EPA Air Quality</p>  
+
+| Item Name | Value |
+|-----------:|:------|
+| Filename   | EPAair_O3_PM25_NC1819_Processed.csv |
+| Date       | 2018–2019 |
+| Source     | EPA Air Quality System (AQS) |
+
+## Task 2 - Import packages and data, suppressing messages
+
+Set the following R code chunk so that it runs when knit, but no messages, errors, or any output is shown. The code itself, however, should be displayed.
+
+```{r project.setup, echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+#Import libraries
+library(tidyverse)
+library(lubridate)
+library(here)
+library(knitr)
+install.packages("tinytex")
+
+#Import EPA data (from the processed_KEY folder) & fix dates
+epa_data <- read.csv(
+  here("Data","Processed_KEY","EPAair_O3_PM25_NC1819_Processed.csv"),
+  stringsAsFactors = TRUE) %>% 
+  mutate(Date = ymd(Date))
+```
+
+---
+
+## Task 3: Creating tables
+
+Set the following R code chunk to display two tables, using knitr's `kable()` function, one listing the mean PM2.5 concentrations for each county, and the other the same except for Ozone. 
+
+-   The titles should be "Mean Particulates (2.5mm)" and "Mean Ozone", respectively. 
+-   The column names should be "County" and "µg/m3" for both tables. (See tip below.)
+-   Finally, round the concentration values in the 2nd column to two decimal places.
+
+Customize the chunk options such that the code is run but is not displayed in the knitted document. The output, however, should be displayed.
+
+> **TIPS:**
+>
+> -   Use `"$\\mu g/m^3$"` as a column name to generate a nicely formatted string via markdown/MathJax notation
+>
+> -   If your output table spans across two pages, try inserting a page break in the markdown just before your code chunk.
+
+
+```{r non kable, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
+#Compute mean PM2.5 concentration for each county, sorted by value
+echo=FALSE
+pm_table <- epa_data %>%
+  group_by(COUNTY) %>%
+  summarize(`µg/m3` = round(mean(PM2.5, na.rm = TRUE), 2)) %>%
+  arrange(`µg/m3`)
+echo=FALSE
+ozone_table <- epa_data %>%
+  group_by(COUNTY) %>%
+  summarize(`µg/m3` = round(mean(Ozone, na.rm = TRUE), 2)) %>%
+  arrange(`µg/m3`)
+#Compute mean ozone concentration for each county, sorted by value
+```
+#Use the `kable` function to produce the 2 tables in markdown format
+```{r table, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
+kable(pm_table, caption = "Mean Particulates (2.5mm)", 
+      align = c('r','l'))
+kable(ozone_table, caption = "Mean Ozone", align = c('r','l'))
+```
+\newpage
+---
+
+## Task 4: Plots
+
+Below this paragraph, but above the horizonal line (`---`), create two separate code chunks that create boxplots of the distribution of Ozone levels by month using, one for only records collected in 2018 and one for records in 2019. Customize the chunk options such that the final figures are displayed but not the code used to generate the figures. In addition, align the plots on the left side of the page and set the figure heights so both plots fit on the same page with minimal space remaining. Lastly, add a `fig.cap` chunk option to add a caption (title) to your plot that will display underneath the figure.
+\newpage
+``` {r, echo=FALSE, fig.cap="2018 monthly Ozone levels", fig.align='left', fig.height=6, fig.show='hold', out.width='48%', message=FALSE, warning=FALSE, error=FALSE}
+epa_data %>%
+filter(year(Date) == 2018) %>%
+mutate(Month = month(Date, label = TRUE)) %>%
+ggplot(aes(x = Month, y = Ozone)) +
+geom_boxplot(fill = "blue", color = "black") +
+labs(
+x = "Month",
+y = expression(paste("Concentration (", mu, "g/m"^3, ")")),
+title = "Monthly Ozone concentrations (2018)"
+) +
+theme_minimal()
+```
+``` {r, echo=FALSE, fig.cap="2019 monthly Ozone levels", fig.align='left', fig.height=6, fig.show='hold', out.width='48%', message=FALSE, warning=FALSE, error=FALSE}
+epa_data %>%
+filter(year(Date) == 2019) %>%
+mutate(Month = month(Date, label = TRUE)) %>%
+ggplot(aes(x = Month, y = Ozone)) +
+geom_boxplot(fill = "green", color = "black") +
+labs(
+x = "Month",
+y = expression(paste("Concentration (", mu, "g/m"^3, ")")),
+title = "Monthly Ozone concentrations (2019)"
+) +
+theme_minimal()
+```
+---
+\newpage
+## Task 5: Knit and submit.
+
+Add a table of contents and list of figures to your document and knit to a PDF. Submit your PDF to Sakai, but also be sure to commit and push your Rmd file used to create this knit document to GitHub. In the section below, add a link to your GitHub repository. **Lastly, add the statement that you did not use AI in the completion of this assignment followed by your name and the date.** 
+
+I spoke with Professor Fay about this, sometimes I would get really weird
+errors that I asked if, I had no time, I could query AI about to try and 
+get it to explain it in a way I could understand without giving me an answer. 
+I did do this for this assignment which my understanding following that 
+conversation with Prof Fay is a gray area. I am trying to understand R but, at times, I really struggle with putting my thoughts to code.
+I also ran into an error called LaTeX warning which wouldn't let me knit
+for over 3 hours, hopefully I fixed that. I couldn't get table 1 to sit in
+the center no matter what I did. 
+Liam Connolly, October 21, 2025
+
+## Git Repository
+https://github.com/uilliam-c/EDE_Fall2025
